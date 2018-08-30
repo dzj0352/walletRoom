@@ -5,6 +5,9 @@
   "description": "a Sails application",
   "keywords": [],
   "dependencies": {
+    "amqplib": "^0.5.2",
+    "async": "^2.6.1",
+    "bignumber": "^1.1.0",
     "ejs": "2.3.4",
     "grunt": "1.0.1",
     "grunt-contrib-clean": "1.0.0",
@@ -19,6 +22,9 @@
     "grunt-sails-linker": "~0.10.1",
     "grunt-sync": "0.5.2",
     "include-all": "^1.0.0",
+    "jingtum-base-lib": "^1.0.9",
+    "jingtum-lib": "^1.4.1",
+    "lodash": "^4.17.10",
     "rc": "1.0.1",
     "sails": "~0.12.13",
     "sails-disk": "~0.10.9"

@@ -57,4 +57,27 @@ try {
 
 
 // Start server
-sails.lift(rc('sails'));
+sails.lift(rc('sails'), function () {
+    var jingtum = require('jingtum-lib');
+    var remote = new jingtum.Remote({
+      server:  'ws://ts5.jingtum.com:5030',local_sign: true
+    });
+   
+    remote.connect(function (err1, data) {
+      if (err1) {
+        sails.log.error('fail connect jingtum' + err1);
+      } else {
+        sails.log.info('connect to jingtum');
+        sails.remote = remote;
+
+        remote.on('disconnect', function () {
+          sails.log.error('disconnect to jingtum');
+        });
+
+        remote.on('reconnect', function () {
+          sails.log.info('reconnect to jingtum');
+        });
+
+      }
+    });
+});
