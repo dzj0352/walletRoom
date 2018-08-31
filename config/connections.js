@@ -45,7 +45,7 @@ module.exports.connections = {
      host: '123.57.219.73',
      user: 'root', //optional
      password: 'qDi59AO1zO8nKM8d', //optional
-     database: 'appdb3.0' //optional
+     database: 'appdev' //optional
   },
 
   /***************************************************************************

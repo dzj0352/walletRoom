@@ -1,11 +1,11 @@
 var amqp = require('amqplib');
 var async= require('async');
 
-exports.orderSendCoin=function(id,cb){
-	console.log("id==="+id);
+exports.orderDoneSendCoin=function(id,cb){
 	var msg={publish_unit:"CNY"};
 	async.waterfall([
 		function(callback){
+			//需要判断issend为空......
 			OtcOrder.update({id:id,status:3},{status:4,issend:1}).exec(function(err,orderResult){
 			  	if(err){
 			  		sails.log.error('发币失败'+err);
@@ -16,15 +16,8 @@ exports.orderSendCoin=function(id,cb){
 			  		sails.log.error('没有更新成功');
 			  		return callback('没有更新成功');
 			  	}
-			  	if(orderResult[0].advert=='1'){
-					//如果是买单的话，确认放币要先减去千分之五的手续费
-					msg.transact_num=orderResult[0].transact_num*(1-0.005);
-					msg.service_fee=orderResult[0].transact_num*0.005;
-				}else{
-					//卖单，
-					msg.transact_num=orderResult[0].transact_num;
-					//service_fee=orderResult.transact_num*0.005;
-				}
+				msg.transact_num=orderResult[0].transact_num;
+			
 			  	return callback(null,orderResult);
 			});
 		},function(orderResult,callback){
@@ -38,7 +31,7 @@ exports.orderSendCoin=function(id,cb){
 			  		return callback('没有这个用户');
 				}
 				msg.publickey=userResult.publickey;
-				return callbcak(null,true);
+				return callback(null,true);
 			});
 		},function(arg,callback){
 			SendCoin.sendCoin(msg,function(err,result){
@@ -98,7 +91,7 @@ exports.closeAdvert=function(id,cb){
 		  		return callback('没有这个用户');
 			}
 			msg.publickey=userResult.publickey;
-			return callbcak(null,true);
+			return callback(null,true);
 		});
 	},function(arg,callback){
 		OtcAdvert.update({id:id},{issend:1}).exec(function(err,result){
@@ -127,7 +120,7 @@ exports.closeAdvert=function(id,cb){
 				owner_name:'资金系统',
 				transac_type:'2',
 				transac_id:id,
-				transac_manner:'1',
+				transac_manner:'1',//广告关闭 退币
 				transac_hash:result,
 				operation_content:"系统放币成功"
 		};
@@ -138,6 +131,81 @@ exports.closeAdvert=function(id,cb){
 			return cb(null,true);
 		});
 	});
+	
+}
+exports.orderCancelSendCoin=function(id,cb){
+	var msg={publish_unit:"CNY"};
+	async.waterfall([
+		function(callback){
+			OtcOrder.findOne({id:id,trasact_type:'2',status:[0,6]}).exec(function(err,orderResult){
+				if(err){
+					return callback('find order fail:'+err);
+				}
+				if(!orderResult){
+					return callback('没有该订单信息');	
+				}
+				if(orderResult.issend==1){
+					return callback('该订单已经放币完成');
+				}
+				msg.transact_num=Number(orderResult.transact_num*1.005).toFixed(2);
+				return callback(null,orderResult);
+
+			});
+		},function(orderResult,callback){
+			User.findOne({id:orderResult.buyer}).exec(function(err,userResult){
+				if(err){
+					sails.log.error('查找用户失败'+err);
+			  		return callback('查找用户失败');
+				}
+				if(!userResult){
+					sails.log.error('没有这个用户');
+			  		return callback('没有这个用户');
+				}
+				msg.publickey=userResult.publickey;
+				return callback(null,true);
+			});
+		},function(arg,callback){
+			//需要判断issend为空......
+			OtcOrder.update({id:id,status:[0,6]},{issend:1}).exec(function(err,result){
+			  	if(err){
+			  		sails.log.error('发币失败'+err);
+			  		return callback('更新失败，发币失败');
+			  	}
+			  	if(result.length==0){
+			  		sails.log.error('没有更新成功');
+			  		return callback('没有更新成功');
+			  	}
+			  	
+			  	return callback(null,true);
+			});
+		},function(arg,callback){
+			SendCoin.sendCoin(msg,function(err,result){
+				if(err){
+					return callback(err);
+				}
+				return callback(null,result);
+			});
+		}],function(err,results){
+				if(err){
+					sails.log.error('订单完成放币失败'+err);
+					return cb(err);
+				}
+				var otcOrderOperation={
+						owner:'258258',
+						owner_name:'资金系统',
+						transac_type:'2',
+						transac_id:id,
+						transac_manner:'3',//订单取消 放币
+						transac_hash:results,
+						operation_content:"系统放币成功"
+				};
+				OtcOrderOperation.create(otcOrderOperation).exec(function(err,result){
+					if(err){
+						return cb('记录操作日志出错:'+err);
+					}
+					return cb(null,true);
+				});
+		});
 	
 }
 exports.sendCoin=function(msg,callback){

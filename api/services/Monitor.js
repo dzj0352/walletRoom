@@ -28,18 +28,29 @@ amqp.connect('amqp:test:test@114.215.134.182:5672').then(
               console.log('arr'+arr);
               if(arr[1]=='1'){
                 //取消广告
-                console.log('11111----');
-              }else if(arr[1]=='2'){
-                SendCoin.orderSendCoin(arr[0],function(err,result){
+                SendCoin.closeAdvert(arr[0],function(err,result){
                     if(err){
-                        sails.log.err(err);
+                        sails.log.error(err);
                         return;
                     }
                     console.log('result===='+result);
-
+                });
+              }else if(arr[1]=='2'){
+                SendCoin.orderDoneSendCoin(arr[0],function(err,result){
+                    if(err){
+                        sails.log.error(err);
+                        return;
+                    }
+                    console.log('result===='+result);
                 });
               }else if(arr[1]=='3'){
-                console.log('333333----');
+               SendCoin.orderCancelSendCoin(arr[0],function(err,result){
+                    if(err){
+                        sails.log.error(err);
+                        return;
+                    }
+                    console.log('result===='+result);
+                });
               }
 			  /*OtcOrder.update({id:id},{status:4}).exec(function(){
 			  	if(err){
