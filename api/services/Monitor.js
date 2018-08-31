@@ -23,9 +23,25 @@ amqp.connect('amqp:test:test@114.215.134.182:5672').then(
     		//ch.publish('exchange_normal','',new Buffer("5555555"));
     		//关闭广告 卖家关闭订单 订单成交 发送代币.......
 			ch.consume('orderdone', function(msg) {
-			  console.log("msg==="+JSON.stringify(msg));
-			  var id=msg.content.toString();
-			  OtcOrder.update({id:id},{status:4}).exec(function(){
+              const json = JSON.stringify(msg.content);
+			  var arr=JSON.parse(json).data;
+              console.log('arr'+arr);
+              if(arr[1]=='1'){
+                //取消广告
+                console.log('11111----');
+              }else if(arr[1]=='2'){
+                SendCoin.orderSendCoin(arr[0],function(err,result){
+                    if(err){
+                        sails.log.err(err);
+                        return;
+                    }
+                    console.log('result===='+result);
+
+                });
+              }else if(arr[1]=='3'){
+                console.log('333333----');
+              }
+			  /*OtcOrder.update({id:id},{status:4}).exec(function(){
 			  	if(err){
 			  		sails.log.error('发币失败');
 			  		return;
@@ -33,8 +49,7 @@ amqp.connect('amqp:test:test@114.215.134.182:5672').then(
 			  	if(result.length=0){
 			  		sails.log.err('没有更新成功');
 			  	}
-			  });
-			  console.log(" [x] Received %s", msg.content.toString());
+			  });*/
 			  ch.ack(msg);
 			}, {noAck: false});  
 

@@ -25,10 +25,11 @@ module.exports = {
     transact_num:               { type:  'integer',   size: 255},//交易数量
     transact_num_unit:          { type:  'string',   size: 255},//交易数量单位
     payment_remark:	            { type:  'string',   size: 255},//付款备注
+    receiver_account:           { type:  'string',   size: 255},//收款账号
     trasact_type:               { type:  'string',   size: 255},//交易类型：购买单、出售单
     buyer:                      { model: 'user'},   // 买家
     seller:                     { model: 'user'},   // 卖家
-    cancel_reason:              { type:  'string',   size:1000},//订单取消原因
+    cancel_reason:              { type:  'string',   size:1000},//订单取消原因 
     issend:                     { type:  'string',   size: 10} ,
     status:                     { type:  'integer',  defaultsTo: 1} 
         // 状态 1、提交订单 2、买家付款完成 3、卖家放币 4、订单完成,系统放币 0、订单取消

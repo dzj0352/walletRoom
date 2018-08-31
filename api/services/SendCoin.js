@@ -1,24 +1,34 @@
 var amqp = require('amqplib');
 var async= require('async');
 
-exports.autoSendCoin=function(msg,cb){
-	var transact_num;//卖家发币数量
-	var service_fee;//服务费
+exports.orderSendCoin=function(id,cb){
+	console.log("id==="+id);
+	var msg={publish_unit:"CNY"};
 	async.waterfall([
 		function(callback){
-			OtcOrder.update({id:id},{status:4}).exec(function(err,orderResult){
+			OtcOrder.update({id:id,status:3},{status:4,issend:1}).exec(function(err,orderResult){
 			  	if(err){
 			  		sails.log.error('发币失败'+err);
 			  		return callback('更新失败，发币失败');
 			  	}
-			  	if(orderResult.length=0){
-			  		sails.log.err('没有更新成功');
+			  	console.log("orderResult==="+JSON.stringify(orderResult));
+			  	if(orderResult.length==0){
+			  		sails.log.error('没有更新成功');
 			  		return callback('没有更新成功');
 			  	}
+			  	if(orderResult[0].advert=='1'){
+					//如果是买单的话，确认放币要先减去千分之五的手续费
+					msg.transact_num=orderResult[0].transact_num*(1-0.005);
+					msg.service_fee=orderResult[0].transact_num*0.005;
+				}else{
+					//卖单，
+					msg.transact_num=orderResult[0].transact_num;
+					//service_fee=orderResult.transact_num*0.005;
+				}
 			  	return callback(null,orderResult);
 			});
 		},function(orderResult,callback){
-			User.findOne({id:result[0].buyer}).exec(function(err,userResult){
+			User.findOne({id:orderResult[0].buyer}).exec(function(err,userResult){
 				if(err){
 					sails.log.error('查找用户失败'+err);
 			  		return callback('查找用户失败');
@@ -27,30 +37,36 @@ exports.autoSendCoin=function(msg,cb){
 					sails.log.error('没有这个用户');
 			  		return callback('没有这个用户');
 				}
-				return callbcak(null,orderResult,userResult);
+				msg.publickey=userResult.publickey;
+				return callbcak(null,true);
 			});
-		},function(orderResult,userResult,callback){
-			if(orderResult[0].advert=='1'){
-				//如果是买单的话，确认放币要先减去千分之五的手续费
-				transact_num=orderResult[0].transact_num*(1-0.005);
-				service_fee=orderResult[0].transact_num*0.005;
-			}else{
-				//卖单，
-				transact_num=orderResult[0].transact_num;
-				//service_fee=orderResult.transact_num*0.005;
-			}
-			
+		},function(arg,callback){
+			SendCoin.sendCoin(msg,function(err,result){
+				if(err){
+					return callback(err);
+				}
+				return callback(null,result);
+			});
 		}],function(err,results){
-			if(err){
-				sails.log.error('订单完成放币失败'+err);
-			}
-			var otcOrderOperation={
-				owner:'258258',
-				owner_name:'资金系统',
-				order_id:results[0].id,
-				operation_content:"系统放币成功"
-			};
-	});
+				if(err){
+					sails.log.error('订单完成放币失败'+err);
+				}
+				var otcOrderOperation={
+						owner:'258258',
+						owner_name:'资金系统',
+						transac_type:'2',
+						transac_id:id,
+						transac_manner:'2',//订单完成放币
+						transac_hash:results,
+						operation_content:"系统放币成功"
+				};
+				OtcOrderOperation.create(otcOrderOperation).exec(function(err,result){
+					if(err){
+						return cb('记录操作日志出错:'+err);
+					}
+					return cb(null,true);
+				});
+		});
 	
 }
 exports.closeAdvert=function(id,cb){
@@ -64,7 +80,7 @@ exports.closeAdvert=function(id,cb){
 			if(!advertResult){
 				return callback('没有该广告单');
 			}
-			if(!advertResult.issend){
+			if(advertResult.issend){
 				return callback('该广告单的代币已经发送成功');
 			}
 			//百分数不精确，得处理......
@@ -106,13 +122,21 @@ exports.closeAdvert=function(id,cb){
 		if(err){
 			return cb(err);
 		}
-		/*var otcOrderOperation={
+		var otcOrderOperation={
 				owner:'258258',
 				owner_name:'资金系统',
-				order_id:results[0].id,
+				transac_type:'2',
+				transac_id:id,
+				transac_manner:'1',
+				transac_hash:result,
 				operation_content:"系统放币成功"
-		};*/
-		return cb();
+		};
+		OtcOrderOperation.create(otcOrderOperation).exec(function(err,result){
+			if(err){
+				return cb('记录操作日志出错:'+err);
+			}
+			return cb(null,true);
+		});
 	});
 	
 }

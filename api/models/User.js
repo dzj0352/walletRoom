@@ -29,7 +29,7 @@ var User = {
     identity:  { type: 'string',  size: 32   },   // 身份证
     bankNo:  { type: 'string'  },   // 实名验证银行卡好
     address:   { type: 'string',  size: 26   },   // 所在地址
-    idImageUrl:{ type: 'string',  size: 256, defaultsTo: ''},   // 身份证url
+    idImageUrl:{ type: 'string',  size: 40 },   // 身份证url
      // 手机以及区号
     areacode:  { type: 'string' ,size: 20, defaultsTo: ''},
     phone:     { type: 'string', size:16},
@@ -40,8 +40,8 @@ var User = {
     secret:    { type: 'text'          }, // 加密的私钥
     ppwd:      { type: 'string', defaultsTo: ''}, // 支付密码Hash
 
-    contacts:  { type: 'string',  size: 256, defaultsTo: '' },
-    banks:     { type: 'string',  size: 256, defaultsTo: ''},
+    contacts:  {  type: 'string',  size: 40  },
+    banks:     {  type: 'string',  size: 40  },
 
     foreigner: { type: 'boolean', defaultsTo: false    },
     upgraded:  { type: 'boolean', defaultsTo: true   },
